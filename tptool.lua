@@ -6,6 +6,7 @@ local FlyButton = Instance.new("TextButton")
 local UICorner = Instance.new("UICorner")
 
 -- Setup GUI Utama
+ScreenGui.Name = "MyCustomMenu"
 ScreenGui.Parent = game.CoreGui
 Frame.Parent = ScreenGui
 Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
@@ -82,12 +83,24 @@ MiniBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- FITUR ASLI DENGAN LINK BARU
+--- === FITUR TP TOOL (Logika Murni Tanpa Menu IY) === ---
 TPButton.MouseButton1Click:Connect(function()
-    -- Menggunakan link refs/heads/main seperti permintaanmu
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/Allzzy/MyScripts/refs/heads/main/tptool.lua"))()
+    local player = game.Players.LocalPlayer
+    local mouse = player:GetMouse()
+    local tool = Instance.new("Tool")
+    tool.RequiresHandle = false
+    tool.Name = "Click Teleport"
+    tool.Activated:Connect(function()
+        local pos = mouse.Hit.p + Vector3.new(0, 3, 0)
+        player.Character:MoveTo(pos)
+    end)
+    tool.Parent = player.Backpack
+    TPButton.Text = "Tool Given!"
+    wait(1)
+    TPButton.Text = "TP Tool"
 end)
 
+--- === FITUR NOCLIP & FLY (Sesuai Request Sebelumnya) === ---
 local noclip = false
 NoclipButton.MouseButton1Click:Connect(function()
     noclip = not noclip
