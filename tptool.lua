@@ -10,36 +10,11 @@ ScreenGui.Name = "MyCustomMenu"
 ScreenGui.Parent = game.CoreGui
 Frame.Parent = ScreenGui
 Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Frame.BackgroundTransparency = 0.3 
 Frame.Position = UDim2.new(0.5, -60, 0.4, 0)
 Frame.Size = UDim2.new(0, 120, 0, 175) 
 Frame.Active = true
 Frame.Draggable = true
-
--- Tombol Exit (X)
-local ExitBtn = Instance.new("TextButton")
-ExitBtn.Parent = Frame
-ExitBtn.Text = "X"
-ExitBtn.Size = UDim2.new(0, 20, 0, 20)
-ExitBtn.Position = UDim2.new(1, -25, 0, 5)
-ExitBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-ExitBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ExitBtn.Font = Enum.Font.SourceSansBold
-ExitBtn.TextSize = 14
-local ExitCorner = Instance.new("UICorner", ExitBtn)
-ExitCorner.CornerRadius = UDim.new(0, 5)
-
--- Tombol Minimize (-)
-local MiniBtn = Instance.new("TextButton")
-MiniBtn.Parent = Frame
-MiniBtn.Text = "-"
-MiniBtn.Size = UDim2.new(0, 20, 0, 20)
-MiniBtn.Position = UDim2.new(1, -50, 0, 5)
-MiniBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-MiniBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-MiniBtn.Font = Enum.Font.SourceSansBold
-MiniBtn.TextSize = 14
-local MiniCorner = Instance.new("UICorner", MiniBtn)
-MiniCorner.CornerRadius = UDim.new(0, 5)
 
 local function createBtn(btn, name, pos, color, text)
     btn.Name = name
@@ -56,51 +31,110 @@ local function createBtn(btn, name, pos, color, text)
     cl.Parent = btn
 end
 
+-- Tombol X dan -
+local ExitBtn = Instance.new("TextButton")
+ExitBtn.Parent = Frame
+ExitBtn.Text = "X"
+ExitBtn.Size = UDim2.new(0, 20, 0, 20)
+ExitBtn.Position = UDim2.new(1, -25, 0, 5)
+ExitBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+ExitBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", ExitBtn).CornerRadius = UDim.new(0, 5)
+
+local MiniBtn = Instance.new("TextButton")
+MiniBtn.Parent = Frame
+MiniBtn.Text = "-"
+MiniBtn.Size = UDim2.new(0, 20, 0, 20)
+MiniBtn.Position = UDim2.new(1, -50, 0, 5)
+MiniBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+MiniBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", MiniBtn).CornerRadius = UDim.new(0, 5)
+
 createBtn(TPButton, "TP", UDim2.new(0, 10, 0, 30), Color3.fromRGB(0, 120, 255), "TP Tool")
 createBtn(NoclipButton, "Noclip", UDim2.new(0, 10, 0, 75), Color3.fromRGB(60, 60, 60), "Noclip: OFF")
 createBtn(FlyButton, "Fly", UDim2.new(0, 10, 0, 120), Color3.fromRGB(200, 0, 0), "Fly: OFF")
 
--- Logic Exit & Minimize
-ExitBtn.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
-end)
+ExitBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() end)
 
-local minimized = false
-MiniBtn.MouseButton1Click:Connect(function()
-    minimized = not minimized
-    if minimized then
-        Frame:TweenSize(UDim2.new(0, 120, 0, 30), "Out", "Quad", 0.3, true)
-        TPButton.Visible = false
-        NoclipButton.Visible = false
-        FlyButton.Visible = false
-        MiniBtn.Text = "+"
+--- === FIX IY FLY (STABLE / TIDAK MEROSOT) === ---
+local iyfly = false
+local flySpeed = 1
+local flyConn
+local uis = game:GetService("UserInputService")
+
+FlyButton.MouseButton1Click:Connect(function()
+    iyfly = not iyfly
+    FlyButton.Text = iyfly and "Fly: ON" or "Fly: OFF"
+    FlyButton.BackgroundColor3 = iyfly and Color3.fromRGB(0, 180, 0) or Color3.fromRGB(200, 0, 0)
+    
+    local player = game.Players.LocalPlayer
+    local char = player.Character or player.CharacterAdded:Wait()
+    local hrp = char:WaitForChild("HumanoidRootPart")
+    local hum = char:WaitForChild("Humanoid")
+
+    if iyfly then
+        -- BV (Velocity) untuk gerak
+        local bv = Instance.new("BodyVelocity")
+        bv.MaxForce = Vector3.new(9e9, 9e9, 9e9) -- Dikasih tenaga penuh biar nggak turun
+        bv.Velocity = Vector3.new(0, 0, 0)
+        bv.Name = "IYFlyBV"
+        bv.Parent = hrp
+        
+        -- BG (Gyro) untuk jaga rotasi
+        local bg = Instance.new("BodyGyro")
+        bg.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+        bg.P = 10000
+        bg.Name = "IYFlyBG"
+        bg.Parent = hrp
+
+        hum.PlatformStand = true
+        
+        flyConn = game:GetService("RunService").Heartbeat:Connect(function()
+            local direction = Vector3.new(0, 0, 0)
+            local cam = workspace.CurrentCamera.CFrame
+            
+            if uis:IsKeyDown(Enum.KeyCode.W) then direction = direction + cam.LookVector end
+            if uis:IsKeyDown(Enum.KeyCode.S) then direction = direction - cam.LookVector end
+            if uis:IsKeyDown(Enum.KeyCode.A) then direction = direction - cam.RightVector end
+            if uis:IsKeyDown(Enum.KeyCode.D) then direction = direction + cam.RightVector end
+            if uis:IsKeyDown(Enum.KeyCode.Space) then direction = direction + Vector3.new(0, 1, 0) end
+            if uis:IsKeyDown(Enum.KeyCode.LeftShift) then direction = direction - Vector3.new(0, 1, 0) end
+            
+            bv.Velocity = direction * (flySpeed * 50)
+            -- Jaga agar karakter selalu hadap depan kamera
+            hrp.CFrame = CFrame.new(hrp.Position, hrp.Position + cam.LookVector)
+        end)
     else
-        Frame:TweenSize(UDim2.new(0, 120, 0, 175), "Out", "Quad", 0.3, true)
-        TPButton.Visible = true
-        NoclipButton.Visible = true
-        FlyButton.Visible = true
-        MiniBtn.Text = "-"
+        if flyConn then flyConn:Disconnect() end
+        hum.PlatformStand = false
+        if hrp:FindFirstChild("IYFlyBV") then hrp.IYFlyBV:Destroy() end
+        if hrp:FindFirstChild("IYFlyBG") then hrp.IYFlyBG:Destroy() end
+        hum:ChangeState(Enum.HumanoidStateType.Running)
     end
 end)
 
---- === FITUR TP TOOL (Logika Murni Tanpa Menu IY) === ---
+--- === TP TOOL & NOCLIP (TETAP SAMA) === ---
 TPButton.MouseButton1Click:Connect(function()
     local player = game.Players.LocalPlayer
-    local mouse = player:GetMouse()
-    local tool = Instance.new("Tool")
-    tool.RequiresHandle = false
-    tool.Name = "Click Teleport"
-    tool.Activated:Connect(function()
-        local pos = mouse.Hit.p + Vector3.new(0, 3, 0)
-        player.Character:MoveTo(pos)
-    end)
-    tool.Parent = player.Backpack
-    TPButton.Text = "Tool Given!"
-    wait(1)
-    TPButton.Text = "TP Tool"
+    local toolName = "Click Teleport"
+    local existingTool = player.Backpack:FindFirstChild(toolName) or player.Character:FindFirstChild(toolName)
+    if existingTool then
+        existingTool:Destroy()
+        TPButton.Text = "TP Tool: OFF"
+        TPButton.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+    else
+        local tool = Instance.new("Tool")
+        tool.RequiresHandle = false
+        tool.Name = toolName
+        tool.Activated:Connect(function()
+            player.Character:MoveTo(player:GetMouse().Hit.p + Vector3.new(0, 3, 0))
+        end)
+        tool.Parent = player.Backpack
+        TPButton.Text = "TP Tool: ON"
+        TPButton.BackgroundColor3 = Color3.fromRGB(0, 180, 0)
+    end
 end)
 
---- === FITUR NOCLIP & FLY (Sesuai Request Sebelumnya) === ---
 local noclip = false
 NoclipButton.MouseButton1Click:Connect(function()
     noclip = not noclip
@@ -109,70 +143,9 @@ NoclipButton.MouseButton1Click:Connect(function()
 end)
 
 game:GetService("RunService").Stepped:Connect(function()
-    if noclip and game.Players.LocalPlayer.Character then
+    if game.Players.LocalPlayer.Character then
         for _, v in pairs(game.Players.LocalPlayer.Character:GetDescendants()) do
-            if v:IsA("BasePart") then v.CanCollide = false end
+            if v:IsA("BasePart") then v.CanCollide = not noclip end
         end
     end
-end)
-
-local flying = false
-local speed = 2
-local keys = {w = false, s = false, a = false, d = false}
-local lp = game.Players.LocalPlayer
-
-FlyButton.MouseButton1Click:Connect(function()
-    flying = not flying
-    FlyButton.Text = flying and "Fly: ON" or "Fly: OFF"
-    FlyButton.BackgroundColor3 = flying and Color3.fromRGB(0, 180, 0) or Color3.fromRGB(200, 0, 0)
-    
-    local char = lp.Character
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    
-    if flying then
-        hum.PlatformStand = true
-        local bg = Instance.new("BodyGyro", hrp)
-        bg.P = 9e4
-        bg.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
-        bg.CFrame = hrp.CFrame
-        
-        local bv = Instance.new("BodyVelocity", hrp)
-        bv.Velocity = Vector3.new(0, 0.1, 0)
-        bv.MaxForce = Vector3.new(9e9, 9e9, 9e9)
-        
-        task.spawn(function()
-            while flying and char and hrp do
-                local cam = workspace.CurrentCamera.CFrame
-                local moveDir = Vector3.new(0,0,0)
-                if keys.w then moveDir = moveDir + cam.LookVector end
-                if keys.s then moveDir = moveDir - cam.LookVector end
-                if keys.a then moveDir = moveDir - cam.RightVector end
-                if keys.d then moveDir = moveDir + cam.RightVector end
-                bv.Velocity = moveDir * (speed * 50)
-                bg.CFrame = cam
-                task.wait()
-            end
-            if bv then bv:Destroy() end
-            if bg then bg:Destroy() end
-            if hum then hum.PlatformStand = false end
-        end)
-    end
-end)
-
-game:GetService("UserInputService").InputBegan:Connect(function(input, gpe)
-    if gpe then return end
-    local k = input.KeyCode
-    if k == Enum.KeyCode.W then keys.w = true
-    elseif k == Enum.KeyCode.S then keys.s = true
-    elseif k == Enum.KeyCode.A then keys.a = true
-    elseif k == Enum.KeyCode.D then keys.d = true end
-end)
-
-game:GetService("UserInputService").InputEnded:Connect(function(input)
-    local k = input.KeyCode
-    if k == Enum.KeyCode.W then keys.w = false
-    elseif k == Enum.KeyCode.S then keys.s = false
-    elseif k == Enum.KeyCode.A then keys.a = false
-    elseif k == Enum.KeyCode.D then keys.d = false end
 end)
