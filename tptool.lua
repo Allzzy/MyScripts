@@ -10,7 +10,7 @@ ScreenGui.Parent = game.CoreGui
 Frame.Parent = ScreenGui
 Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 Frame.Position = UDim2.new(0.5, -60, 0.4, 0)
-Frame.Size = UDim2.new(0, 120, 0, 175) -- Sedikit lebih tinggi untuk ruang tombol atas
+Frame.Size = UDim2.new(0, 120, 0, 175) 
 Frame.Active = true
 Frame.Draggable = true
 
@@ -55,7 +55,6 @@ local function createBtn(btn, name, pos, color, text)
     cl.Parent = btn
 end
 
--- Posisi tombol diturunkan sedikit agar tidak tabrakan dengan Exit/Mini
 createBtn(TPButton, "TP", UDim2.new(0, 10, 0, 30), Color3.fromRGB(0, 120, 255), "TP Tool")
 createBtn(NoclipButton, "Noclip", UDim2.new(0, 10, 0, 75), Color3.fromRGB(60, 60, 60), "Noclip: OFF")
 createBtn(FlyButton, "Fly", UDim2.new(0, 10, 0, 120), Color3.fromRGB(200, 0, 0), "Fly: OFF")
@@ -83,9 +82,10 @@ MiniBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- FITUR ASLI (TIDAK DIRUBAH)
+-- FITUR ASLI DENGAN LINK BARU
 TPButton.MouseButton1Click:Connect(function()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/Allzzy/MyScripts/main/tptool.lua"))()
+    -- Menggunakan link refs/heads/main seperti permintaanmu
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/Allzzy/MyScripts/refs/heads/main/tptool.lua"))()
 end)
 
 local noclip = false
